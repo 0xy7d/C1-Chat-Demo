@@ -14,6 +14,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_community.tools import DuckDuckGoSearchRun
 
+import yfinance as yf
 
 load_dotenv()
 
@@ -33,13 +34,37 @@ model = ChatOpenAI(
 checkpointer = InMemorySaver()
 search = DuckDuckGoSearchRun()
 
-@tool
+@tool('get_internet_search_results', description='A function that searches the internet for the given query.')
 def get_internet_search_results(query: str) -> str:
     """
     Use the internet to search for the given query and return the results.
     """
     result = search.run(query)
     return result
+
+@tool('get_stock_price', description='A function that returns the current stock price based on a ticker symbol.')
+def get_stock_price(ticker: str):
+    """
+    Use the internet to search for the given query and return the results.
+    """
+    stock = yf.Ticker(ticker)
+    return stock.history()['Close'].iloc[-1]
+
+@tool('get_historical_stock_price', description='A function that returns the current stock price over time based on a ticker symbol and a start and end date.')
+def get_historical_stock_price(ticker: str, start_date: str, end_date: str):
+    """
+    Use the internet to search for the given query and return the results.
+    """
+    stock = yf.Ticker(ticker)
+    return stock.history(start=start_date, end=end_date)['Close']
+
+@tool('get_stock_news', description='A function that returns news based on a ticker symbol.')
+def get_stock_news(ticker: str):
+    """
+    Use the internet to search for the given query and return the results.
+    """
+    stock = yf.Ticker(ticker)
+    return stock.news
 
 agent = create_agent(
     model = model,
