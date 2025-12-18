@@ -12,24 +12,34 @@ from langchain.tools import tool
 from langchain.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
+from langchain_community.tools import DuckDuckGoSearchRun
+
 
 load_dotenv()
 
 app = FastAPI()
 
-# model = ChatOpenAI(
-#     model = 'c1/openai/gpt-5/v-20250930',
-#     base_url = 'https://api.thesys.dev/v1/embed/'
-# )
-
 model = ChatOpenAI(
-    model = './qwen2.5-7b',
-    base_url = os.getenv('AI_API_BASE_URL'),
-    api_key = os.getenv('AI_API_KEY')
+    model = 'c1/openai/gpt-5/v-20250930',
+    base_url = 'https://api.thesys.dev/v1/embed/'
 )
 
-checkpointer = InMemorySaver()
+# model = ChatOpenAI(
+#     model = './qwen2.5-7b',
+#     base_url = os.getenv('AI_API_BASE_URL'),
+#     api_key = os.getenv('AI_API_KEY')
+# )
 
+checkpointer = InMemorySaver()
+search = DuckDuckGoSearchRun()
+
+@tool
+def get_internet_search_results(query: str) -> str:
+    """
+    Use the internet to search for the given query and return the results.
+    """
+    result = search.run(query)
+    return result
 
 agent = create_agent(
     model = model,
