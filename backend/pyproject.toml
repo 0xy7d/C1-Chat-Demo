@@ -5,7 +5,10 @@ description = "A simple AI agent with UI rendered responses."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "ddgs>=9.10.0",
+    "duckduckgo-search>=8.1.1",
     "fastapi>=0.123.7",
+    "langchain-community>=0.4.1",
     "langchain[openai]>=1.1.0",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.1",
