@@ -5,6 +5,7 @@ import './App.css'
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('light')
+  const apiUrl = import.meta.env.VITE_API_URL
 
   return (
     <div className="app-container">
@@ -16,7 +17,7 @@ function App() {
       </button>
 
       <ThemeProvider mode={mode}>
-        <C1Chat apiUrl="/api/chat" />
+        <C1Chat apiUrl={apiUrl} />
       </ThemeProvider>
     </div>
   )

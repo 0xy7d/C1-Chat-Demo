@@ -5,12 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'https://api.chat.demo.0xy7d.xyz',
-        changeOrigin: true
-      }
-    }
+    port: 3000
+  },
+  define: {
+    'process.env': process.env
   }
 })
+
