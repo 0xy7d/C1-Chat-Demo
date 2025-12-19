@@ -27,5 +27,5 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            badasskoder/ai-assistant-backend:latest
-            badasskoder/ai-assistant-backend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-assistant-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-assistant-backend:${{ github.sha }}
