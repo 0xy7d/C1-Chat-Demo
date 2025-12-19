@@ -34,6 +34,18 @@ checkpointer = InMemorySaver()
 search = DuckDuckGoSearchRun()
 
 
+def _get_stock(ticker: str) -> yf.Ticker | None:
+    """
+    Helper function to handle stock data
+    """
+
+    try:
+        stock = yf.Ticker(ticker)
+        return stock
+    except Exception as e:
+        return None
+
+
 @tool(
     "get_internet_search_results",
     description="A function that searches the internet for the given query.",
@@ -54,20 +66,28 @@ def get_stock_price(ticker: str):
     """
     Use the internet to search for the given query and return the results.
     """
-    stock = yf.Ticker(ticker)
-    return stock.history()["Close"].iloc[-1]
+    stock = _get_stock(ticker)
+
+    if stock:
+        return stock.history()["Close"].iloc[-1]
+    return "Stock not found"
 
 
 @tool(
     "get_historical_stock_price",
     description="A function that returns the current stock price over time based on a ticker symbol and a start and end date.",
 )
-def get_historical_stock_price(ticker: str, start_date: str, end_date: str):
+def get_historical_stock_price(
+    ticker: str, start_date: str = "2025-01-01", end_date: str = "2025-12-31"
+):
     """
     Use the internet to search for the given query and return the results.
     """
-    stock = yf.Ticker(ticker)
-    return stock.history(start=start_date, end=end_date)["Close"]
+    stock = _get_stock(ticker)
+
+    if stock:
+        return stock.history(start=start_date, end=end_date)["Close"]
+    return "Stock not found"
 
 
 @tool(
@@ -78,8 +98,11 @@ def get_stock_news(ticker: str):
     """
     Use the internet to search for the given query and return the results.
     """
-    stock = yf.Ticker(ticker)
-    return stock.news
+    stock = _get_stock(ticker)
+
+    if stock:
+        return stock.news
+    return "Stock not found"
 
 
 agent = create_agent(
@@ -112,7 +135,14 @@ async def chat(request: RequestObject):
 
     def generate():
         for token, _ in agent.stream(
-            {"messages": [SystemMessage(""), HumanMessage(request.prompt.content)]},
+            {
+                "messages": [
+                    SystemMessage(
+                        "You are a helpful assistant. You have solid knowledge of the stock market. And you have access to the internet. Your goal is to help the user by answering their questions."
+                    ),
+                    HumanMessage(request.prompt.content),
+                ]
+            },
             stream_mode="messages",
             config=config,
         ):
