@@ -1,6 +1,6 @@
+import logging
 import os
 
-import uvicorn
 import yfinance as yf
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -17,6 +17,7 @@ from pydantic import BaseModel
 load_dotenv()
 
 app = FastAPI()
+logger = logging.getLogger(__name__)
 
 model = ChatOpenAI(
     model="c1/openai/gpt-5/v-20250930",
@@ -34,75 +35,81 @@ checkpointer = InMemorySaver()
 search = DuckDuckGoSearchRun()
 
 
-def _get_stock(ticker: str) -> yf.Ticker | None:
-    """
-    Helper function to handle stock data
-    """
-
-    try:
-        stock = yf.Ticker(ticker)
-        return stock
-    except Exception as e:
-        return None
+def _get_stock(ticker: str) -> yf.Ticker:
+    return yf.Ticker(ticker)
 
 
 @tool(
     "get_internet_search_results",
-    description="A function that searches the internet for the given query.",
+    description="Search the internet for the given query.",
 )
-def get_internet_search_results(query: str) -> str:
-    """
-    Use the internet to search for the given query and return the results.
-    """
-    result = search.run(query)
-    return result
+def get_internet_search_results(query: str):
+    try:
+        return search.run(query)
+    except Exception as e:
+        logger.exception("internet_search_failed")
+        return {"error": "internet_search_failed", "details": str(e)}
 
 
 @tool(
     "get_stock_price",
-    description="A function that returns the current stock price based on a ticker symbol.",
+    description="Returns the latest closing stock price for a ticker symbol.",
 )
 def get_stock_price(ticker: str):
-    """
-    Use the internet to search for the given query and return the results.
-    """
-    stock = _get_stock(ticker)
-
-    if stock:
-        return stock.history()["Close"].iloc[-1]
-    return "Stock not found"
+    try:
+        stock = _get_stock(ticker)
+        history = stock.history(period="1d")
+        if history.empty:
+            return {"error": "no_price_data"}
+        return {
+            "ticker": ticker.upper(),
+            "price": float(history["Close"].iloc[-1]),
+        }
+    except Exception as e:
+        logger.exception("stock_price_failed")
+        return {"error": "stock_price_failed", "details": str(e)}
 
 
 @tool(
     "get_historical_stock_price",
-    description="A function that returns the current stock price over time based on a ticker symbol and a start and end date.",
+    description="Returns historical closing prices for a ticker symbol.",
 )
 def get_historical_stock_price(
-    ticker: str, start_date: str = "2025-01-01", end_date: str = "2025-12-31"
+    ticker: str,
+    start_date: str = "2025-01-01",
+    end_date: str = "2025-12-31",
 ):
-    """
-    Use the internet to search for the given query and return the results.
-    """
-    stock = _get_stock(ticker)
-
-    if stock:
-        return stock.history(start=start_date, end=end_date)["Close"]
-    return "Stock not found"
+    try:
+        stock = _get_stock(ticker)
+        history = stock.history(start=start_date, end=end_date)
+        if history.empty:
+            return {"error": "no_historical_data"}
+        return {
+            "ticker": ticker.upper(),
+            "prices": history["Close"].to_dict(),
+        }
+    except Exception as e:
+        logger.exception("historical_price_failed")
+        return {"error": "historical_price_failed", "details": str(e)}
 
 
 @tool(
     "get_stock_news",
-    description="A function that returns news based on a ticker symbol.",
+    description="Returns recent news articles for a ticker symbol.",
 )
 def get_stock_news(ticker: str):
-    """
-    Use the internet to search for the given query and return the results.
-    """
-    stock = _get_stock(ticker)
-
-    if stock:
-        return stock.news
-    return "Stock not found"
+    try:
+        stock = _get_stock(ticker)
+        news = stock.news
+        if not news:
+            return {"error": "no_news"}
+        return {
+            "ticker": ticker.upper(),
+            "news": news,
+        }
+    except Exception as e:
+        logger.exception("stock_news_failed")
+        return {"error": "stock_news_failed", "details": str(e)}
 
 
 agent = create_agent(
@@ -138,7 +145,7 @@ async def chat(request: RequestObject):
             {
                 "messages": [
                     SystemMessage(
-                        "You are a helpful assistant. You have solid knowledge of the stock market. And you have access to the internet. Your goal is to help the user by answering their questions."
+                        "You are a helpful assistant with strong knowledge of the stock market and access to the internet."
                     ),
                     HumanMessage(request.prompt.content),
                 ]
@@ -146,7 +153,8 @@ async def chat(request: RequestObject):
             stream_mode="messages",
             config=config,
         ):
-            yield token.content
+            if token.content:
+                yield token.content
 
     return StreamingResponse(
         generate(),
@@ -157,6 +165,3 @@ async def chat(request: RequestObject):
         },
     )
 
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
