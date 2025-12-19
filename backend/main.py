@@ -19,6 +19,20 @@ load_dotenv()
 app = FastAPI()
 logger = logging.getLogger(__name__)
 
+origins = [
+    "http://localhost:3000",
+    "https://chat.demo.0xy7d.xyz",
+    "https://chat-demo.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 model = ChatOpenAI(
     model="c1/openai/gpt-5/v-20250930",
     base_url="https://api.thesys.dev/v1/embed/",
