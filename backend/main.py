@@ -19,17 +19,17 @@ load_dotenv()
 app = FastAPI()
 logger = logging.getLogger(__name__)
 
-# model = ChatOpenAI(
-#     model="c1/openai/gpt-5/v-20250930",
-#     base_url="https://api.thesys.dev/v1/embed/",
-#     api_key=os.getenv("THESYS_API_KEY"),
-# )
-
 model = ChatOpenAI(
-    model=os.getenv("LLM_MODEL"),
-    base_url=os.getenv("LLM_BASE_URL"),
-    api_key=os.getenv("LLM_API_KEY"),
+    model="c1/openai/gpt-5/v-20250930",
+    base_url="https://api.thesys.dev/v1/embed/",
+    api_key=os.getenv("THESYS_API_KEY"),
 )
+
+# model = ChatOpenAI(
+#     model=os.getenv("LLM_MODEL"),
+#     base_url=os.getenv("LLM_BASE_URL"),
+#     api_key=os.getenv("LLM_API_KEY"),
+# )
 
 checkpointer = InMemorySaver()
 search = DuckDuckGoSearchRun()
