@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 origins = [
     "http://localhost:3000",
     "https://chat.demo.0xy7d.xyz",
-    "https://chat-demo.vercel.app",
+    "https://c1-chat-demo.vercel.app",
 ]
 
 app.add_middleware(
